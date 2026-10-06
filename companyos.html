@@ -1,0 +1,132 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CompanyOS</title><style>
+:root{--bg:#07080f;--p:#6366f1;--a:#22d3ee;--b:#ffffff14}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 500px at 50% -10%,#2a2f6b55,transparent),var(--bg);color:#e8eaf6;font-family:Inter,system-ui,sans-serif}
+h1{font-size:clamp(40px,8vw,76px);margin:0 0 10px;letter-spacing:-2px;background:linear-gradient(90deg,#fff,var(--a));-webkit-background-clip:text;color:transparent}
+.m{opacity:.65}.center{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center}
+textarea{width:min(640px,100%);background:#ffffff0a;border:1px solid var(--b);border-radius:14px;color:inherit;padding:16px;font:inherit;resize:none}
+.btn{background:linear-gradient(90deg,var(--p),var(--a));border:0;color:#fff;padding:14px 30px;border-radius:12px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.2s}.btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px #6366f155}
+.err{color:#f87171;margin:0}.orb{width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--p),var(--a),var(--p));animation:s 1.4s linear infinite;filter:blur(1px)}.orb.done{animation:none;background:radial-gradient(#34d399,#059669)}@keyframes s{to{transform:rotate(360deg)}}
+.dots{display:flex;gap:8px}.dots i{width:28px;height:4px;border-radius:2px;background:var(--b);transition:.4s}.dots i.on{background:var(--a)}
+.dash{display:grid;grid-template-columns:200px 1fr;min-height:100vh}aside{display:flex;flex-direction:column;gap:4px;padding:18px;border-right:1px solid var(--b)}.sp{flex:1}
+aside button{background:none;border:0;color:#aab;text-align:left;padding:9px 12px;border-radius:8px;cursor:pointer;font-size:12px;letter-spacing:1px}aside button:hover,aside .act{background:var(--b);color:#fff}.logo{margin-bottom:14px}
+section{padding:24px;min-width:0}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}h2{margin:0}
+.score{text-align:right}.score b{font-size:40px;color:var(--a)}.score span{display:block;font-size:11px;opacity:.6}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}.card{background:#ffffff08;border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:16px;animation:f .4s}@keyframes f{from{opacity:0;transform:translateY(6px)}}
+.card h4{margin:0 0 10px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--a)}ul{padding-left:18px;margin:6px 0}.big{font-size:22px;font-weight:700;margin:0}
+.bar{display:grid;grid-template-columns:160px 1fr 30px;gap:10px;align-items:center;margin:8px 0;font-size:13px}.bar i{height:6px;background:var(--b);border-radius:3px}.bar u{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,var(--p),var(--a))}
+.frame{width:100%;height:78vh;border:1px solid var(--b);border-radius:14px;background:#fff}pre{overflow:auto;max-height:70vh;font-size:12px}
+.bp{padding:28px;border-radius:12px;text-align:center}.pill{padding:8px 18px;border-radius:99px;color:#fff;font-size:13px}.sw{display:flex;gap:8px;flex-wrap:wrap}.sw span{padding:8px 12px;border-radius:8px;font-size:12px;border:1px solid var(--b)}.tag{font-size:11px;background:var(--b);padding:3px 10px;border-radius:99px}
+@media(max-width:700px){.dash{grid-template-columns:1fr}aside{flex-direction:row;flex-wrap:wrap;border:0}.sp{display:none}}
+</style></head><body><div id="root"></div><script>
+// window.COMPANYOS_CONFIG={provider:"claude",proxyUrl:"http://localhost:8787/api/generate"} // opcional
+const hash=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7)
+const pick=(a,h,o=0)=>a[(h>>>o)%a.length]
+const cap=s=>s[0].toUpperCase()+s.slice(1)
+const PAL=[['#6366f1','#22d3ee','#0b1020','Inter'],['#10b981','#a3e635','#07120e','Manrope'],['#f97316','#f43f5e','#140b0b','Sora'],['#8b5cf6','#ec4899','#0f0a1a','Space Grotesk']]
+const CATS=[
+{re:/restaur|comida|aliment|food|cocina|desperdicio/i,stems:['Menu','Plato','Mesa','Cocina'],customer:'Restaurantes independientes y pequeñas cadenas',problem:'Desperdicio de comida y mala previsión de demanda',solution:'Predicción de demanda y optimización de compras y producción',market:'Mercado global de software para hostelería de decenas de miles de M€ (estimación orientativa)',price:[49,149,399],extra:['Forecast Agent','Predice demanda y propone pedidos','Reducir el desperdicio un 20 %']},
+{re:/compra|industri|pyme|pequeñas empresas|proveedor|b2b|logíst/i,stems:['Compra','Supply','Orden','Proveo'],customer:'Pymes industriales con equipos de compras reducidos',problem:'Compras manuales, lentas y sin comparación de proveedores',solution:'Automatización de solicitudes, cotizaciones y pedidos con IA',market:'Software de procurement para pymes: segmento multimillonario en crecimiento (estimación orientativa)',price:[79,249,699],extra:['Procurement Agent','Compara proveedores y prepara pedidos','Ahorrar un 10 % en compras']},
+{re:/salud|clínic|médic|pacient|bienestar|fitness/i,stems:['Cura','Vita','Clinia','Pulso'],customer:'Clínicas pequeñas y profesionales de la salud',problem:'Carga administrativa que resta tiempo a los pacientes',solution:'Asistente de agenda, seguimiento y documentación con IA',market:'Software de gestión sanitaria: mercado grande y regulado (estimación orientativa)',price:[59,179,499],extra:['Patient Follow-up Agent','Gestiona recordatorios y seguimiento','Reducir ausencias un 30 %']},
+{re:/educa|curso|aprend|colegio|estudiant|profesor|formaci/i,stems:['Aula','Saber','Tutor','Lecto'],customer:'Academias, profesores y creadores de formación',problem:'Contenido genérico y poco seguimiento del alumno',solution:'Rutas de aprendizaje personalizadas y feedback automático con IA',market:'Edtech global en expansión (estimación orientativa)',price:[19,79,249],extra:['Tutor Agent','Adapta ejercicios y explica errores','Aumentar la finalización de cursos']},
+{re:/./,stems:['Nova','Forma','Núcleo','Sendas'],customer:'Pequeñas empresas y equipos que buscan automatizar tareas repetitivas',problem:'Procesos manuales que consumen tiempo y generan errores',solution:'Plataforma con IA que automatiza el flujo principal del cliente',market:'Mercado de software con IA para pymes: grande y fragmentado (estimación orientativa)',price:[29,99,299],extra:['Operations Agent','Ejecuta y supervisa el flujo operativo','Ahorrar 10 h semanales por cliente']}]
+const ag=(name,fn,goal,tasks,tools,autonomy)=>({name,function:fn,goal,tasks,tools,autonomy})
+function demoGenerate(idea){
+  const h=hash(idea.toLowerCase()), c=CATS.find(x=>x.re.test(idea))
+  const name=pick(c.stems,h)+pick(['AI','OS','ly','Flow','Base'],h,3)
+  const [p1,p2,bg,font]=pick(PAL,h,5), [s,m,l]=c.price
+  const slogan=pick(['Menos fricción, más resultados.','Tu negocio, en piloto automático.','Inteligencia que trabaja por ti.'],h,2)
+  const crit={'Tamaño de mercado':0,'Problema':1,'Disposición a pagar':2,'Competencia':3,'Escalabilidad':4,'Dificultad':5,'Defensibilidad':6}
+  const scores=Object.fromEntries(Object.entries(crit).map(([k,i])=>[k,45+(hash(idea+k)+i*7)%46]))
+  const total=Math.round(Object.values(scores).reduce((a,b)=>a+b,0)/7)
+  const agents=[ag(c.extra[0],c.extra[1],c.extra[2],['Analizar datos del cliente','Generar recomendaciones','Registrar resultados'],['Datos del cliente','API del modelo de IA'],'Semi-autónomo'),
+   ag('Research Agent','Investiga mercado y competencia','Mantener inteligencia actualizada',['Monitorizar competidores','Resumir tendencias'],['Búsqueda web','Company Brain'],'Asistido'),
+   ag('Sales Agent','Prospecta y califica leads','Conseguir los 10 primeros clientes',['Listar prospectos','Redactar emails','Priorizar leads'],['CRM','Email'],'Asistido'),
+   ag('Marketing Agent','Crea y programa contenido','Generar demanda cualificada',['Calendario editorial','Copys de anuncios'],['Redes sociales','Analytics'],'Asistido'),
+   ag('Support Agent','Atiende dudas de clientes','Resolver el 70 % de consultas sin humano',['Responder FAQ','Escalar incidencias'],['Helpdesk','Base de conocimiento'],'Semi-autónomo'),
+   ag('Analytics Agent','Vigila métricas clave','Detectar desviaciones pronto',['Informe semanal','Alertas de churn'],['Dashboard','Company Brain'],'Autónomo (solo lectura)')]
+  const launch=[['Semana 1 · Validar','Entrevistar 10 clientes objetivo','Publicar la landing con lista de espera','Definir el problema con citas reales'],
+   ['Semana 2 · Prototipar','Construir el MVP mínimo','Preparar una demo de 3 minutos','Lanzar 2 experimentos de adquisición'],
+   ['Semana 3 · Pilotos','Cerrar 3 pilotos gratuitos','Medir activación y feedback','Iterar sobre las 3 principales fricciones'],
+   ['Semana 4 · Monetizar','Convertir pilotos a plan de pago','Publicar caso de éxito','Decidir si escalar, pivotar o parar']]
+  const metrics=[['Visitas → registros','≥ 5 %','Valida el mensaje'],['Activación (primer valor)','≥ 40 %','Valida el producto'],['MRR','Primeros '+s*10+' €','Valida la monetización'],['Churn mensual','< 5 %','Valida la retención'],['CAC / LTV','LTV ≥ 3× CAC','Valida la escalabilidad'],['NPS','≥ 40','Valida la satisfacción']].map(([n,t,w])=>({name:n,target:t,why:w}))
+  const co={idea,
+   company:{name,slogan,valueProp:`${c.solution} para ${c.customer.toLowerCase()}.`,description:`${name} es una empresa digital que resuelve «${c.problem.toLowerCase()}» mediante ${c.solution.toLowerCase()}.`,mission:`Ayudar a ${c.customer.toLowerCase()} a trabajar con más claridad y menos coste.`,positioning:`La alternativa simple y asequible a las herramientas generalistas, hecha para ${c.customer.toLowerCase()}.`},
+   market:{customer:c.customer,problem:c.problem,size:c.market,segments:['Early adopters tecnológicos','Pymes en crecimiento','Cuentas medianas'],competitors:['Hojas de cálculo y procesos manuales','Software generalista','Consultoras y agencias'],advantages:['Especialización en un solo problema','Onboarding en minutos','Precio accesible'],risks:['Adopción lenta','Calidad y confianza en la IA','Competidores grandes entrando']},
+   model:{product:c.solution,pricing:[{plan:'Starter',price:s},{plan:'Pro',price:m},{plan:'Business',price:l}],revenue:'Suscripción mensual SaaS',costs:['Inferencia de IA','Infraestructura','Soporte y ventas'],monetization:'Free trial de 14 días → plan Pro; upsell a Business por volumen.'},
+   gtm:{channels:['Outbound dirigido','LinkedIn','Comunidades del sector','SEO de contenido'],strategy:'Empezar con un nicho concreto y conseguir pilotos con acompañamiento manual.',firstTargets:['10 empresas del segmento principal','3 prescriptores del sector'],offer:`Piloto de 30 días gratis a cambio de feedback semanal.`,experiments:['Landing + lista de espera','Cold email a 50 prospectos','Demo en vídeo en LinkedIn']},
+   product:{mvp:`Flujo único: el usuario conecta sus datos y ${name} entrega una recomendación accionable.`,features:[['Onboarding guiado','P0'],['Panel principal de resultados','P0'],['Recomendaciones con IA','P0'],['Exportación de informes','P1'],['Integraciones','P2'],['Roles de equipo','P2']].map(([n,p])=>({name:n,priority:p})),roadmap:[['Mes 1','MVP + pilotos'],['Mes 2–3','Integraciones y automatización'],['Mes 4–6','Agentes ejecutables y plan Business']].map(([when,what])=>({when,what}))},
+   brand:{name,slogan,description:`Marca ${pick(['cercana y fiable','moderna y precisa','ágil y directa'],h,1)}, con estética limpia y tecnológica.`,tone:pick(['Claro, directo, sin jerga','Cercano y experto','Profesional con toques de ironía'],h,4),colors:{primary:p1,accent:p2,background:bg},fonts:{headings:font,body:'Inter'}},
+   agents,launch:launch.map(([title,...tasks])=>({title,tasks})),metrics,
+   score:{total,criteria:scores,note:'Evaluación orientativa generada por IA. No es una predicción garantizada.'}}
+  co.faq=[[`¿Qué es ${name}?`,co.company.description],['¿Cuánto cuesta?',`Desde ${s} €/mes, con prueba gratuita de 14 días.`],['¿Necesito conocimientos técnicos?','No. El onboarding guiado te lleva en pocos minutos.'],['¿Mis datos están seguros?','Tus datos se usan solo para darte el servicio.']]
+  co.brain={identity:co.company,strategy:{positioning:co.company.positioning,gtm:co.gtm,model:co.model},market:co.market,product:co.product,customers:[{segment:c.customer,status:'objetivo',contacts:[]}],agents:agents.map(a=>a.name),
+   tasks:launch[0].slice(1).map((t,i)=>({id:'t'+(i+1),title:t,status:'todo',owner:'founder'})),decisions:[{date:new Date().toISOString().slice(0,10),decision:'Empezar con un nicho único y pilotos manuales',reason:'Reducir riesgo y aprender rápido'}],metrics,
+   meta:{version:'1.0',provider:'demo',createdAt:new Date().toISOString(),idea}}
+  return co
+}
+const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+function landingHTML(co){
+  const {company:c,brand:b,market:m,model:mo,faq}=co, [p1,p2,bg]=[b.colors.primary,b.colors.accent,b.colors.background]
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${e(c.name)}</title><style>
+*{box-sizing:border-box}body{margin:0;background:${bg};color:#eef;font-family:${b.fonts.body},system-ui,sans-serif;line-height:1.55}h1,h2,h3{font-family:${b.fonts.headings},system-ui;margin:0}
+section{max-width:960px;margin:auto;padding:56px 24px}nav{display:flex;justify-content:space-between;max-width:960px;margin:auto;padding:20px 24px}
+.hero{text-align:center;padding-top:80px}.hero h1{font-size:clamp(34px,6vw,60px);background:linear-gradient(90deg,${p1},${p2});-webkit-background-clip:text;color:transparent}
+.btn{display:inline-block;background:linear-gradient(90deg,${p1},${p2});color:#fff;border:0;padding:13px 24px;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:24px}.c{background:#ffffff0d;border:1px solid #ffffff1a;border-radius:14px;padding:20px}
+.price{font-size:32px;font-weight:700}input{padding:12px;border-radius:10px;border:1px solid #ffffff33;background:#ffffff0d;color:#fff;min-width:240px}details{border-bottom:1px solid #ffffff1a;padding:14px 0}summary{cursor:pointer;font-weight:600}.m{opacity:.7}
+</style></head><body>
+<nav><b>${e(c.name)}</b><a href="#cta" class="m" style="color:inherit">Empezar</a></nav>
+<section class="hero"><h1>${e(c.slogan)}</h1><p class="m" style="max-width:600px;margin:18px auto 28px">${e(c.valueProp)}</p><a class="btn" href="#cta">Probar gratis</a></section>
+<section><h2>El problema</h2><p class="m">${e(m.problem)}. Esto afecta a ${e(m.customer.toLowerCase())}.</p></section>
+<section><h2>La solución</h2><p class="m">${e(mo.product)}.</p><div class="grid">${co.product.features.slice(0,4).map(f=>`<div class="c"><h3>${e(f.name)}</h3></div>`).join('')}</div></section>
+<section><h2>Beneficios</h2><div class="grid">${m.advantages.map(a=>`<div class="c">✓ ${e(a)}</div>`).join('')}</div></section>
+<section><h2>Cómo funciona</h2><div class="grid">${['Cuéntanos tu caso','La IA analiza','Actúas con recomendaciones'].map((t,i)=>`<div class="c"><b style="color:${p2}">0${i+1}</b><h3>${t}</h3></div>`).join('')}</div></section>
+<section><h2>Precios</h2><div class="grid">${mo.pricing.map(p=>`<div class="c"><h3>${e(p.plan)}</h3><div class="price">${p.price} €<small class="m">/mes</small></div></div>`).join('')}</div></section>
+<section id="cta" style="text-align:center"><h2>Únete a la lista de espera</h2><p class="m">Sin compromiso.</p><form onsubmit="event.preventDefault();this.outerHTML='<p><b>¡Gracias! Te avisaremos pronto.</b></p>'"><input type="email" required placeholder="tu@email.com"> <button class="btn">Unirme</button></form></section>
+<section><h2>FAQ</h2>${faq.map(([q,a])=>`<details><summary>${e(q)}</summary><p class="m">${e(a)}</p></details>`).join('')}</section>
+</body></html>`}
+function toMarkdown(co){
+  const l=a=>a.map(x=>'- '+x).join('\n'),{company:c,market:m,model:mo,gtm:g,product:p,brand:b}=co
+  return `# ${c.name}\n> ${c.slogan}\n\n${c.description}\n\n**Misión:** ${c.mission}\n**Posicionamiento:** ${c.positioning}\n\n## Mercado\n- Cliente: ${m.customer}\n- Problema: ${m.problem}\n- Tamaño: ${m.size}\n\n**Segmentos**\n${l(m.segments)}\n\n**Competidores**\n${l(m.competitors)}\n\n**Ventajas**\n${l(m.advantages)}\n\n**Riesgos**\n${l(m.risks)}\n\n## Modelo de negocio\n${mo.revenue}. ${mo.monetization}\n${l(mo.pricing.map(x=>`${x.plan}: ${x.price} €/mes`))}\n\n## Go-to-market\n${g.strategy}\n${l(g.channels)}\n\n## Producto\n${p.mvp}\n${l(p.features.map(f=>`[${f.priority}] ${f.name}`))}\n\n## Marca\nTono: ${b.tone}. Colores: ${Object.values(b.colors).join(', ')}. Tipografías: ${b.fonts.headings} / ${b.fonts.body}\n\n## Agentes\n${co.agents.map(a=>`### ${a.name}\n${a.function}. Objetivo: ${a.goal}. Autonomía: ${a.autonomy}\n${l(a.tasks)}`).join('\n\n')}\n\n## Lanzamiento\n${co.launch.map(w=>`### ${w.title}\n${l(w.tasks)}`).join('\n\n')}\n\n## Métricas\n${l(co.metrics.map(x=>`${x.name} (${x.target})`))}\n\n## Company Potential Score: ${co.score.total}/100\n${co.score.note}\n`}
+// ===== AIProvider (para conectar modelos reales: define window.COMPANYOS_CONFIG={provider:'claude',proxyUrl:'http://localhost:8787/api/generate'}) =====
+class AIProvider{name='base';async generateCompany(){throw new Error('No implementado')}}
+class DemoProvider extends AIProvider{name='demo';async generateCompany(i){return demoGenerate(i)}}
+class RemoteProvider extends AIProvider{constructor(n,u){super();this.name=n;this.url=u}
+ async generateCompany(idea){const r=await fetch(this.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idea,provider:this.name})});if(!r.ok)throw new Error('El proxy de IA respondió '+r.status);const c=await r.json();c.brain=c.brain||{};c.brain.meta={...(c.brain.meta||{}),provider:this.name};return c}}
+const getProvider=()=>{const c=window.COMPANYOS_CONFIG||{};return c.provider&&c.provider!=='demo'&&c.proxyUrl?new RemoteProvider(c.provider,c.proxyUrl):new DemoProvider()}
+// ===== UI =====
+const STEPS=['Analysing market…','Designing business model…','Creating brand…','Building product…','Deploying company…']
+const TABS=['Company','Market','Product','Brand','Website','Agents','Launch','Metrics','Brain']
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))
+const ul=a=>'<ul>'+a.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'
+const card=(t,h)=>`<div class="card"><h4>${esc(t)}</h4>${h}</div>`
+const root=document.getElementById('root'),$=s=>document.querySelector(s)
+const dl=(n,t,ty)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:ty}));a.download=n;a.click()}
+let CO=null,TAB='Company',IDEA=''
+function home(err){root.innerHTML=`<main class="center"><h1>Build a company.</h1><p class="m">Describe tu idea y deja que la IA construya el primer sistema operativo de tu empresa.</p><textarea id="idea" rows="3" aria-label="¿Qué empresa quieres construir?" placeholder="Una empresa de IA que automatice las compras de pequeñas empresas industriales."></textarea><p class="err" id="err">${err||''}</p><button class="btn" id="go">BUILD COMPANY</button><small class="m">${getProvider().name==='demo'?'DEMO MODE · sin API externa':'Provider: '+getProvider().name}</small></main>`
+ $('#idea').value=IDEA;$('#go').onclick=build}
+async function build(){IDEA=$('#idea').value.trim();if(IDEA.length<10){$('#err').textContent='Describe tu idea con algo más de detalle.';return}
+ let s=0;root.innerHTML=`<main class="center"><div class="orb"></div><h2 id="st">${STEPS[0]}</h2><div class="dots">${STEPS.map((_,i)=>`<i id="d${i}" class="${i?'':'on'}"></i>`).join('')}</div></main>`
+ const t=setInterval(()=>{s=Math.min(s+1,STEPS.length-1);$('#st').textContent=STEPS[s];$('#d'+s).className='on'},900)
+ try{[CO]=await Promise.all([getProvider().generateCompany(IDEA),new Promise(r=>setTimeout(r,4600))]);clearInterval(t)
+  root.innerHTML=`<main class="center"><div class="orb done"></div><h2>YOUR COMPANY IS READY.</h2><p class="m">${esc(CO.company.name)} · ${esc(CO.company.slogan)}</p><button class="btn" id="open">Abrir dashboard</button></main>`;$('#open').onclick=()=>{TAB='Company';dash()}}
+ catch(e){clearInterval(t);home(esc(e.message||e))}}
+function view(){const co=CO,{company:c,market:m,model:mo,gtm:g,product:p,brand:b}=co,g_=h=>`<div class="grid">${h}</div>`
+ if(TAB==='Company')return g_(card('Identidad',`<h2>${esc(c.name)}</h2><p class="m">${esc(c.slogan)}</p><p>${esc(c.description)}</p>`)+card('Misión y posicionamiento',`<p>${esc(c.mission)}</p><p>${esc(c.positioning)}</p>`)+card('Modelo de negocio',`<p>${esc(mo.revenue)}</p>${ul(mo.pricing.map(x=>`${x.plan}: ${x.price} €/mes`))}<p class="m">${esc(mo.monetization)}</p>`)+card('Go-to-market',`<p>${esc(g.strategy)}</p>${ul(g.channels)}`))
+ if(TAB==='Market')return g_(card('Cliente ideal',`<p>${esc(m.customer)}</p>`)+card('Problema',`<p>${esc(m.problem)}</p>`)+card('Mercado',`<p>${esc(m.size)}</p>${ul(m.segments)}`)+card('Competidores',ul(m.competitors))+card('Ventajas',ul(m.advantages))+card('Riesgos',ul(m.risks)))
+ if(TAB==='Product')return g_(card('MVP',`<p>${esc(p.mvp)}</p>`)+card('Funcionalidades',ul(p.features.map(f=>`[${f.priority}] ${f.name}`)))+card('Roadmap',ul(p.roadmap.map(r=>`${r.when}: ${r.what}`))))
+ if(TAB==='Brand')return g_(card('Vista previa',`<div class="bp" style="background:${esc(b.colors.background)};font-family:${esc(b.fonts.headings)},sans-serif"><h2 style="background:linear-gradient(90deg,${b.colors.primary},${b.colors.accent});-webkit-background-clip:text;color:transparent">${esc(b.name)}</h2><p>${esc(b.slogan)}</p><span class="pill" style="background:${b.colors.primary}">CTA</span></div>`)+card('Identidad',`<p>${esc(b.description)}</p><p>Tono: ${esc(b.tone)}</p><p>Tipografías: ${esc(b.fonts.headings)} / ${esc(b.fonts.body)}</p><div class="sw">${Object.entries(b.colors).map(([k,v])=>`<span title="${k}" style="background:${v}">${v}</span>`).join('')}</div>`))
+ if(TAB==='Website')return '<iframe id="fr" class="frame" title="landing" sandbox="allow-scripts"></iframe>'
+ if(TAB==='Agents')return g_(co.agents.map(a=>card(a.name,`<p>${esc(a.function)}</p><p class="m">Objetivo: ${esc(a.goal)}</p>${ul(a.tasks)}<p class="m">Herramientas: ${esc(a.tools.join(', '))}</p><span class="tag">${esc(a.autonomy)}</span>`)).join(''))
+ if(TAB==='Launch')return g_(co.launch.map(w=>card(w.title,ul(w.tasks))).join(''))
+ if(TAB==='Metrics')return g_(co.metrics.map(x=>card(x.name,`<p class="big">${esc(x.target)}</p><p class="m">${esc(x.why)}</p>`)).join(''))
+ return card('Company Brain · provider: '+co.brain.meta.provider,`<pre>${esc(JSON.stringify(co.brain,null,2))}</pre>`)}
+function dash(){const sc=CO.score
+ root.innerHTML=`<div class="dash"><aside><b class="logo">CompanyOS</b>${TABS.map(t=>`<button data-t="${t}" class="${t===TAB?'act':''}">${t.toUpperCase()}</button>`).join('')}<div class="sp"></div><button id="xj">↓ JSON</button><button id="xm">↓ Markdown</button><button id="nw">+ Nueva empresa</button></aside><section><header><div><h2>${esc(CO.company.name)}</h2><p class="m">${esc(CO.company.slogan)}</p></div><div class="score"><b>${sc.total}</b><span>/100 Potential Score</span></div></header>${TAB==='Company'?card('Company Potential Score',Object.entries(sc.criteria).map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i><u style="width:${v}%"></u></i><em>${v}</em></div>`).join('')+`<p class="m">${esc(sc.note)}</p>`):''}${view()}</section></div>`
+ if(TAB==='Website')$('#fr').srcdoc=landingHTML(CO)
+ document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;dash()})
+ $('#xj').onclick=()=>dl(CO.company.name+'.json',JSON.stringify(CO,null,2),'application/json')
+ $('#xm').onclick=()=>dl(CO.company.name+'.md',toMarkdown(CO),'text/markdown')
+ $('#nw').onclick=()=>{IDEA='';home()}}
+home()
+</script></body></html>
